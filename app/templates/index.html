@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レシートスキャナー</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+                         "Noto Sans JP", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        .upload-area {
+            background: #fff;
+            border: 2px dashed #bdc3c7;
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #3498db;
+            background: #ebf5fb;
+        }
+
+        .upload-area svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: #95a5a6;
+        }
+
+        .upload-area p {
+            color: #7f8c8d;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area .hint {
+            font-size: 0.85rem;
+            color: #bdc3c7;
+        }
+
+        input[type="file"] { display: none; }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: #fff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #219a52;
+        }
+
+        .btn-full {
+            background: #8e44ad;
+            color: #fff;
+            grid-column: 1 / -1;
+        }
+
+        .btn-full:hover:not(:disabled) {
+            background: #7d3c98;
+        }
+
+        .btn-csv {
+            background: #e67e22;
+            color: #fff;
+            grid-column: 1 / -1;
+        }
+
+        .btn-csv:hover:not(:disabled) {
+            background: #d35400;
+        }
+
+        .preview {
+            display: none;
+            background: #fff;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+
+        .preview .filename {
+            margin-top: 0.5rem;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .result {
+            display: none;
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result h2 {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .receipt-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .info-item .label {
+            font-size: 0.8rem;
+            color: #95a5a6;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-item .value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .items-table th {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .items-table td {
+            padding: 0.5rem;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 0.9rem;
+        }
+
+        .items-table td:last-child {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .status-bar {
+            display: none;
+            background: #fff;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-bar .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .status-bar .status-item + .status-item {
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .status-icon.pending { background: #bdc3c7; }
+        .status-icon.loading { background: #f39c12; animation: pulse 1s infinite; }
+        .status-icon.done { background: #27ae60; }
+        .status-icon.error { background: #e74c3c; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #fff;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 200;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: #27ae60; }
+        .toast.error { background: #e74c3c; }
+
+        @media (max-width: 600px) {
+            .actions { grid-template-columns: 1fr; }
+            .btn-full, .btn-csv { grid-column: auto; }
+            .receipt-info { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Receipt Scanner</h1>
+            <p>レシート画像をアップロードして、スプレッドシートに保存 & MoneyForward連携</p>
+        </header>
+
+        <!-- アップロードエリア -->
+        <div class="upload-area" id="uploadArea">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>レシート画像をドラッグ&ドロップ</p>
+            <p class="hint">またはクリックしてファイルを選択（JPG, PNG対応）</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <!-- プレビュー -->
+        <div class="preview" id="preview">
+            <img id="previewImg" src="" alt="レシートプレビュー">
+            <div class="filename" id="fileName"></div>
+        </div>
+
+        <!-- アクションボタン -->
+        <div class="actions">
+            <button class="btn btn-primary" id="btnScan" disabled>
+                OCRスキャン
+            </button>
+            <button class="btn btn-success" id="btnSave" disabled>
+                Sheets保存
+            </button>
+            <button class="btn btn-full" id="btnSync" disabled>
+                フル連携（Scan → Sheets → MoneyForward）
+            </button>
+            <button class="btn btn-csv" id="btnCsv" disabled>
+                MoneyForward用CSVダウンロード
+            </button>
+        </div>
+
+        <!-- ステータスバー -->
+        <div class="status-bar" id="statusBar">
+            <div class="status-item">
+                <div class="status-icon pending" id="statusOcr">1</div>
+                <span>OCRスキャン</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon pending" id="statusSheets">2</div>
+                <span>Google Sheets保存</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon pending" id="statusMf">3</div>
+                <span>MoneyForward連携</span>
+            </div>
+        </div>
+
+        <!-- 結果表示 -->
+        <div class="result" id="result">
+            <h2>スキャン結果</h2>
+            <div class="receipt-info" id="receiptInfo"></div>
+            <table class="items-table" id="itemsTable">
+                <thead>
+                    <tr>
+                        <th>商品名</th>
+                        <th>数量</th>
+                        <th>税区分</th>
+                        <th>金額</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const btnScan = document.getElementById('btnScan');
+        const btnSave = document.getElementById('btnSave');
+        const btnSync = document.getElementById('btnSync');
+        const btnCsv = document.getElementById('btnCsv');
+        const statusBar = document.getElementById('statusBar');
+        const result = document.getElementById('result');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        let selectedFile = null;
+
+        // ドラッグ&ドロップ
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('画像ファイルを選択してください', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            fileName.textContent = file.name;
+            btnScan.disabled = false;
+            btnSave.disabled = false;
+            btnSync.disabled = false;
+            btnCsv.disabled = false;
+        }
+
+        // スキャンのみ
+        btnScan.addEventListener('click', async () => {
+            await callApi('/api/scan', false);
+        });
+
+        // スキャン + Sheets保存
+        btnSave.addEventListener('click', async () => {
+            await callApi('/api/scan-and-save', false);
+        });
+
+        // フル連携
+        btnSync.addEventListener('click', async () => {
+            await callApi('/api/scan-and-sync', true);
+        });
+
+        // CSVダウンロード
+        btnCsv.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            loadingOverlay.classList.add('active');
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const resp = await fetch('/api/export-csv', { method: 'POST', body: formData });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'エラーが発生しました');
+                }
+
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'moneyforward_import.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showToast('CSVファイルをダウンロードしました', 'success');
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                loadingOverlay.classList.remove('active');
+            }
+        });
+
+        async function callApi(endpoint, showStatus) {
+            if (!selectedFile) return;
+
+            loadingOverlay.classList.add('active');
+            if (showStatus) {
+                statusBar.style.display = 'block';
+                resetStatus();
+                setStatus('statusOcr', 'loading');
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const resp = await fetch(endpoint, { method: 'POST', body: formData });
+                const data = await resp.json();
+
+                if (!resp.ok) throw new Error(data.detail || 'エラーが発生しました');
+
+                if (showStatus) {
+                    setStatus('statusOcr', 'done');
+                    if (data.sheets) setStatus('statusSheets', 'done');
+                    if (data.moneyforward) {
+                        setStatus('statusMf', data.moneyforward.errors.length === 0 ? 'done' : 'error');
+                    }
+                }
+
+                displayResult(data.receipt);
+                showToast('処理が完了しました', 'success');
+            } catch (err) {
+                if (showStatus) {
+                    ['statusOcr', 'statusSheets', 'statusMf'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el.classList.contains('loading')) setStatus(id, 'error');
+                    });
+                }
+                showToast(err.message, 'error');
+            } finally {
+                loadingOverlay.classList.remove('active');
+            }
+        }
+
+        function displayResult(receipt) {
+            result.style.display = 'block';
+
+            const info = document.getElementById('receiptInfo');
+            info.innerHTML = `
+                <div class="info-item">
+                    <div class="label">店舗名</div>
+                    <div class="value">${receipt.store_name || '不明'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">日付</div>
+                    <div class="value">${receipt.date || '不明'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">合計</div>
+                    <div class="value">&yen;${(receipt.total || 0).toLocaleString()}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">支払方法</div>
+                    <div class="value">${receipt.payment_method || '不明'}</div>
+                </div>
+            `;
+
+            const tbody = document.getElementById('itemsBody');
+            tbody.innerHTML = '';
+            (receipt.items || []).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.tax_category}</td>
+                    <td>&yen;${item.price.toLocaleString()}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function setStatus(id, state) {
+            const el = document.getElementById(id);
+            el.className = 'status-icon ' + state;
+            if (state === 'done') el.textContent = '\u2713';
+            else if (state === 'error') el.textContent = '\u2717';
+        }
+
+        function resetStatus() {
+            ['statusOcr', 'statusSheets', 'statusMf'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                el.className = 'status-icon pending';
+                el.textContent = i + 1;
+            });
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
