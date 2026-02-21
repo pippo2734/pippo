@@ -1,45 +1,55 @@
-"""Google OAuth2認証（Sheets API / Drive API用）"""
+"""Google OAuth2認証（ログイン + Sheets API用）"""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+from authlib.integrations.starlette_client import OAuth
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 
-from app.config import BASE_DIR, GOOGLE_OAUTH_SCOPES
+from app.config import (
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_OAUTH_SCOPES,
+)
 
-TOKEN_PATH = BASE_DIR / "token.json"
-CREDENTIALS_PATH = BASE_DIR / "credentials.json"
+# --- Starlette OAuth (ログイン用) ---
+
+oauth = OAuth()
+oauth.register(
+    name="google",
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": " ".join(GOOGLE_OAUTH_SCOPES)},
+    authorize_params={"access_type": "offline", "prompt": "consent"},
+)
 
 
-def get_google_credentials() -> Credentials:
-    """Google OAuth2のクレデンシャルを取得
+# --- Google API Credentials (Sheets操作用) ---
 
-    初回実行時はブラウザで認証フローが起動します。
-    2回目以降はトークンファイルから読み込みます。
-    """
-    creds = None
+def get_credentials_from_token(token_json: str) -> Credentials | None:
+    """保存済みトークンからCredentialsを復元"""
+    try:
+        token_data = json.loads(token_json)
+    except (json.JSONDecodeError, TypeError):
+        return None
 
-    if TOKEN_PATH.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), GOOGLE_OAUTH_SCOPES)
+    if not token_data.get("token"):
+        return None
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if not CREDENTIALS_PATH.exists():
-                raise FileNotFoundError(
-                    f"Google OAuth2クレデンシャルファイルが見つかりません: {CREDENTIALS_PATH}\n"
-                    "Google Cloud Consoleからcredentials.jsonをダウンロードし、"
-                    "プロジェクトルートに配置してください。"
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(CREDENTIALS_PATH), GOOGLE_OAUTH_SCOPES
-            )
-            creds = flow.run_local_server(port=0)
+    creds = Credentials(
+        token=token_data.get("token"),
+        refresh_token=token_data.get("refresh_token"),
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        scopes=GOOGLE_OAUTH_SCOPES,
+    )
 
-        TOKEN_PATH.write_text(creds.to_json())
+    if not creds.valid and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
 
     return creds

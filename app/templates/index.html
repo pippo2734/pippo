@@ -318,9 +318,61 @@
             .btn-full, .btn-csv { grid-column: auto; }
             .receipt-info { grid-template-columns: 1fr; }
         }
+        .navbar {
+            background: #fff;
+            border-bottom: 1px solid #ecf0f1;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar a { text-decoration: none; color: #333; }
+        .navbar .brand { font-weight: 700; font-size: 1.1rem; }
+
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .navbar .nav-links a {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .navbar .nav-links a:hover { color: #3498db; }
+        .navbar .nav-links a.active { color: #3498db; font-weight: 600; }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <a href="/" class="brand">Receipt Scanner</a>
+        <div class="nav-links">
+            <a href="/" class="active">スキャン</a>
+            <a href="/settings">設定</a>
+        </div>
+        <div class="user-info">
+            {% if user.picture %}
+            <img src="{{ user.picture }}" alt="" class="avatar" referrerpolicy="no-referrer">
+            {% endif %}
+            <span>{{ user.name }}</span>
+            <a href="/logout" style="font-size:0.85rem; color:#e74c3c;">ログアウト</a>
+        </div>
+    </nav>
+
     <div class="container">
         <header>
             <h1>Receipt Scanner</h1>

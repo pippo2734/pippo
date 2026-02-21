@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: receipt-scanner
+    runtime: docker
+    plan: free
+    envVars:
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: APP_SECRET_KEY
+        generateValue: true
+      - key: APP_URL
+        fromService:
+          type: web
+          name: receipt-scanner
+          property: url
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設定 - Receipt Scanner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+                         "Noto Sans JP", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: #fff;
+            border-bottom: 1px solid #ecf0f1;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar a { text-decoration: none; color: #333; }
+        .navbar .brand { font-weight: 700; font-size: 1.1rem; }
+
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .navbar .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .navbar .nav-links a {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .navbar .nav-links a:hover { color: #3498db; }
+        .navbar .nav-links a.active { color: #3498db; font-weight: 600; }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-group .hint {
+            font-size: 0.8rem;
+            color: #95a5a6;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #2980b9; }
+
+        .toast {
+            background: #27ae60;
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 600;
+        }
+
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="brand">Receipt Scanner</a>
+        <div class="nav-links">
+            <a href="/">スキャン</a>
+            <a href="/settings" class="active">設定</a>
+        </div>
+        <div class="user-info">
+            {% if user.picture %}
+            <img src="{{ user.picture }}" alt="" class="avatar" referrerpolicy="no-referrer">
+            {% endif %}
+            <span>{{ user.name }}</span>
+            <a href="/logout" style="font-size:0.85rem; color:#e74c3c;">ログアウト</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>設定</h1>
+
+        <div class="toast {% if request.query_params.get('saved') %}show{% endif %}">
+            設定を保存しました
+        </div>
+
+        <form method="POST" action="/settings">
+            <!-- Google Sheets設定 -->
+            <div class="card">
+                <h2>&#x1F4CA; Google Sheets 連携</h2>
+                <div class="form-group">
+                    <label>スプレッドシートID</label>
+                    <div class="hint">
+                        Google SheetsのURLの /d/ と /edit の間の文字列です<br>
+                        例: https://docs.google.com/spreadsheets/d/<b>ここの部分</b>/edit
+                    </div>
+                    <input type="text" name="spreadsheet_id" value="{{ user.spreadsheet_id }}"
+                           placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+                </div>
+                <div class="form-group">
+                    <label>ワークシート名</label>
+                    <div class="hint">データを保存するシート名（なければ自動作成されます）</div>
+                    <input type="text" name="worksheet_name" value="{{ user.worksheet_name }}"
+                           placeholder="レシート">
+                </div>
+            </div>
+
+            <!-- MoneyForward設定 -->
+            <div class="card">
+                <h2>&#x1F4B0; MoneyForward ME 連携</h2>
+                <div class="form-group">
+                    <label>メールアドレス</label>
+                    <div class="hint">MoneyForward MEのログイン用メールアドレス（任意）</div>
+                    <input type="email" name="mf_email" value="{{ user.mf_email }}"
+                           placeholder="example@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>パスワード</label>
+                    <div class="hint">MoneyForward MEのパスワード（任意。未設定でもCSVエクスポートは利用可能）</div>
+                    <input type="password" name="mf_password"
+                           value="{{ user.mf_password }}"
+                           placeholder="MoneyForwardのパスワード">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">設定を保存</button>
+        </form>
+    </div>
+</body>
+</html>

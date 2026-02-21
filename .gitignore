@@ -33,6 +33,9 @@ uploads/
 # CSV exports
 exports/
 
+# Database
+data/
+
 # OS
 .DS_Store
 Thumbs.db

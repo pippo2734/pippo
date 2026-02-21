@@ -3,42 +3,42 @@
 from __future__ import annotations
 
 import gspread
+from google.oauth2.credentials import Credentials
 
-from app.auth.google_auth import get_google_credentials
-from app.config import GOOGLE_SHEETS_SPREADSHEET_ID, GOOGLE_SHEETS_WORKSHEET_NAME
 from app.models.receipt import Receipt
 
 
 class GoogleSheetsClient:
     """Google Sheets操作クライアント"""
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: Credentials, spreadsheet_id: str, worksheet_name: str = "レシート") -> None:
+        self._credentials = credentials
+        self._spreadsheet_id = spreadsheet_id
+        self._worksheet_name = worksheet_name
         self._client: gspread.Client | None = None
-        self._spreadsheet: gspread.Spreadsheet | None = None
         self._worksheet: gspread.Worksheet | None = None
 
     def _ensure_connected(self) -> None:
         if self._client is None:
-            creds = get_google_credentials()
-            self._client = gspread.authorize(creds)
+            self._client = gspread.authorize(self._credentials)
 
     def _get_worksheet(self) -> gspread.Worksheet:
         """ワークシートを取得（なければ作成）"""
         self._ensure_connected()
 
-        if not GOOGLE_SHEETS_SPREADSHEET_ID:
+        if not self._spreadsheet_id:
             raise ValueError(
                 "スプレッドシートIDが設定されていません。\n"
-                ".envファイルにGOOGLE_SHEETS_SPREADSHEET_IDを設定してください。"
+                "設定画面からGoogle SheetsのスプレッドシートIDを設定してください。"
             )
 
-        self._spreadsheet = self._client.open_by_key(GOOGLE_SHEETS_SPREADSHEET_ID)
+        spreadsheet = self._client.open_by_key(self._spreadsheet_id)
 
         try:
-            self._worksheet = self._spreadsheet.worksheet(GOOGLE_SHEETS_WORKSHEET_NAME)
+            self._worksheet = spreadsheet.worksheet(self._worksheet_name)
         except gspread.WorksheetNotFound:
-            self._worksheet = self._spreadsheet.add_worksheet(
-                title=GOOGLE_SHEETS_WORKSHEET_NAME, rows=1000, cols=15
+            self._worksheet = spreadsheet.add_worksheet(
+                title=self._worksheet_name, rows=1000, cols=15
             )
             self._setup_header()
 
@@ -50,7 +50,6 @@ class GoogleSheetsClient:
             return
         header = Receipt().to_sheet_header()
         self._worksheet.update("A1", [header])
-        # ヘッダー行を太字にフォーマット
         self._worksheet.format("A1:K1", {
             "textFormat": {"bold": True},
             "backgroundColor": {"red": 0.9, "green": 0.9, "blue": 0.95},
@@ -65,16 +64,13 @@ class GoogleSheetsClient:
         ws = self._get_worksheet()
         rows = receipt.to_sheet_rows()
 
-        # 既存データの最終行を取得
         existing = ws.get_all_values()
         if not existing:
-            # ヘッダーがない場合は追加
             self._setup_header()
             start_row = 2
         else:
             start_row = len(existing) + 1
 
-        # データを追加
         cell_range = f"A{start_row}"
         ws.update(cell_range, rows)
 
