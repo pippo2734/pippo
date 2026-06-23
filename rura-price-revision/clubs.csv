@@ -1,2 +1,5 @@
-club_id,club_name,design_id,design_edit_url,before_copy_id,before_copy_url,status,notes
-fukuoka-nishijin,福岡西新,DAG_Z6db2XA,https://www.canva.com/design/DAG_Z6db2XA,,,phase0_verified,49ページ。Phase 0技術実証済み。
+club_id,club_name,original_design_id,original_url,before_copy_id,before_copy_url,after_copy_id,after_copy_url,test_delta,test_status,notes
+fukuoka-nishijin,福岡西新,DAG_Z6db2XA,https://www.canva.com/design/DAG_Z6db2XA,,,,,,phase0_verified,49ページ。Phase 0技術実証済み。
+kameido,亀戸,DAG_ZXwpakY,https://canva.link/dj0fzlxvfdae94o,DAHNYcX-uag,https://www.canva.com/d/m-K-bckG_2TutQH,DAHNYePUrCc,https://www.canva.com/d/5KQfFiD93VmtuA9,500,after_committed,74p。会員種別/マスター/セルフプラス6表66セルに+500。スクール除外。元URL無変更。
+shizuoka,静岡,DAG23duzJD4,https://canva.link/qecm0yc2wjbyzsh,DAHNYVKvHdo,https://www.canva.com/d/OYDKDHCjO_tnwHV,DAHNYYvETSM,https://www.canva.com/d/l7mP1MCOVoaH0MQ,500,after_committed,88p。会員種別(セルフプラス)p4/p5の22セルに+500。マスター表なし。スクール除外。元URL無変更。
+kasukabe,春日部,DAG226sSs3A,https://canva.link/kakdiwsw3xvpi8d,DAHNYelbqTU,https://www.canva.com/d/GBrTkFIWBpF-oGx,DAHNYXr6Brc,https://www.canva.com/d/4vhbKjXZKj_Jv_T,500,after_committed,97p。会員種別p8/p9の26セルに+500。スクール除外。元URL無変更。
